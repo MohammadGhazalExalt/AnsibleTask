@@ -1,0 +1,15 @@
+---
+
+ hypervisor_files:
+         - {path: /root/cbis-installer/templates/generic/firstboot/cbis/general_utils}
+
+ undercloud_files:
+         - {path: /home/stack/templates/firstboot/cbis/general_utils/files}
+         - {path: /usr/share/cbis/undercloud/templates/generic/firstboot/cbis/general_utils}
+         - {path: /usr/share/cbis}
+
+ overcloud_files:
+         - {path: /usr/share/cbis/undercloud/templates/generic/firstboot/cbis/general_utils}
+         - {path: /usr/share/cbis/ }
+         - {path: /usr/share/cbis/utils }
+

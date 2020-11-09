@@ -1,0 +1,63 @@
+---
+    - name: Finding {{ item }} files \#1
+      find:
+       path: "{{path1}}/{{ item }}_files"
+      register: find_results1
+
+    - name: Finding {{ item }}  files \#2
+      find:
+       path: "{{path2}}/{{ item }}_files"
+      register: find_results2
+
+    - name: Fetching {{ item }} files \#1 data
+      shell: "ls -Z {{ item.path }}"
+      loop: "{{ find_results1.files }}"
+      register: shell_out1
+
+    - name: Fetching {{ item }} files\#2 data
+      shell: "ls -Z {{ item.path }}"
+      loop: "{{ find_results2.files }}"
+      register: shell_out2
+
+    - name: Creating output file
+      lineinfile:
+        path: /etc/ansible/output
+        line: " ,Permissions,Owner,Group,SE User,SE Role,SE Type, SE Level"
+        create: yes
+      delegate_to: localhost
+
+    - name: Adding unformatted {{ item }} files \#1 data to output
+      lineinfile:
+        path: /etc/ansible/output
+        line: "{{ item.stdout.split(' ')[-1] }},{{ item.stdout.split(' ')[0] }},{{ item.stdout.split(' ')[1] }},{{ item.stdout.split(' ')[2] }},{{ item.stdout.split(' ')[3].split(':')[0] }},{{ item.stdout.split(' ')[3].split(':')[1] }},{{ item.stdout.split(' ')[3].split(':')[2] }},{{ item.stdout.split(' ')[3].split(':')[3] }},{{ inventory_hostname }}"
+      loop: "{{ shell_out1.results }}" 
+      delegate_to: localhost
+
+    - name: Adding unformatted {{ item }} files \#2 data to output
+      lineinfile:
+        path: /etc/ansible/output
+        line: "{{ item.stdout.split(' ')[-1] }},{{ item.stdout.split(' ')[0] }},{{ item.stdout.split(' ')[1] }},{{ item.stdout.split(' ')[2] }},{{ item.stdout.split(' ')[3].split(':')[0] }},{{ item.stdout.split(' ')[3].split(':')[1] }},{{ item.stdout.split(' ')[3].split(':')[2] }},{{ item.stdout.split(' ')[3].split(':')[3] }},{{ inventory_hostname }}"
+      loop: "{{ shell_out2.results }}"
+      delegate_to: localhost
+
+    - name: Get {{ item }} files' \#1 contents
+      slurp:
+       src: "{{ item.path }}"
+      loop: "{{ find_results1.files }}"
+      register: slurpfile1
+
+    - name: Get {{ item }} files' \#2 contents
+      slurp:
+       src: "{{ item.path }}"
+      loop: "{{ find_results2.files }}"
+      register: slurpfile2
+
+    - name: Creating dictionary with {{ item }} files' \#1 contents
+      set_fact:
+       dict_var1: "{{ dict_var1 | default({})  | combine({item.item.path.split('/')[-1]: item['content'] | b64decode}) }}"
+      with_items: "{{ slurpfile1.results }}"
+
+    - name: Creating dictionary with {{ item }} files' \#2 contents
+      set_fact:
+       dict_var2: "{{ dict_var2 | default({})  | combine({item.item.path.split('/')[-1]: item['content'] | b64decode}) }}"
+      with_items: "{{ slurpfile2.results }}"

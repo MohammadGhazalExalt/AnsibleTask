@@ -1,0 +1,57 @@
+---
+ - name: Comparing all files
+   hosts: all
+   gather_facts: no
+   vars_files: files.yaml
+   vars:
+    path1: /tmp
+    path2: /home
+    file_types:
+     - hypervisor
+     - undercloud
+     - overcloud
+   tasks:
+    - name: Cleaning old output file
+      file:
+       path: /etc/ansible/output
+       state: absent
+ 
+    - name: Looping over all file types
+      include_tasks: compare.yaml
+      loop: "{{ file_types }}"
+
+    - name: Create testing directory if it does not exist
+      file:
+       path: /tmp/testing
+       state: directory
+       mode: '0755'
+
+    - name: Creating temporary files
+      copy:
+       dest: "/tmp/testing/{{ item.key }}.test"
+       content: "{{ item.value }}"
+      with_dict: "{{ dict_var1 }}"
+
+    - name: Comparing files' contents
+      copy:
+       dest: "/tmp/testing/{{ item.key }}.test"
+       content: "{{ item.value }}"
+      diff: yes
+      with_dict: "{{ dict_var2 }}"
+   
+    - name: Formatting output data
+      shell: awk -F ',' '{printf "%-50s %-13s %-15s %-15s %-15s %-15s %-15s %-10s %s\n",$1,$2,$3,$4,$5,$6,$7,$8,$9}' /etc/ansible/output
+      register: myout
+      delegate_to: localhost
+ 
+    - name: Creating Output file
+      copy:
+       dest: "/etc/ansible/outputfinal"
+       content: "{{ myout.stdout }}"
+      delegate_to: localhost
+
+
+    - name: Cleaning
+      file:
+       state: absent
+       path: "/tmp/testing/"

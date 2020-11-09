@@ -1,0 +1,54 @@
+---
+ - name: Copying all files to {{copy_path}}
+   hosts: all
+   gather_facts: no
+   vars_files: files.yaml
+   vars:
+    copy_path: /tmp
+   tasks:
+
+     - name: Looking for hypervisor files
+       find: 
+        paths: "{{ item.path }}" 
+        recurse: yes 
+        patterns: "hypervisor*"
+       loop: "{{ hypervisor_files }}"
+       register: files_to_copy
+       delegate_to: localhost
+
+     - name: Copying hypervisor files
+       copy:
+        src: "{{ item.files[0].path }}"
+        dest: "{{ copy_path }}/hypervisor_files/"
+       loop: "{{ files_to_copy.results }}"
+
+     - name: Looking for undercloud files
+       find:
+        paths: "{{ item.path }}"
+        recurse: yes
+        patterns: "undercloud*"
+       loop: "{{ undercloud_files }}"
+       register: files_to_copy
+       delegate_to: localhost
+
+     - name: Copying undercloud files
+       copy:
+        src: "{{ item.files[0].path }}"
+        dest: "{{ copy_path }}/undercloud_files/"
+       loop: "{{ files_to_copy.results }}"
+
+     - name: Looking for overcloud files
+       find:
+        paths: "{{ item.path }}"
+        recurse: yes
+        patterns: "overcloud*"
+       loop: "{{ overcloud_files }}"
+       register: files_to_copy
+       delegate_to: localhost
+
+     - name: Copying overcloud files
+       copy:
+        src: "{{ item.files[0].path }}"
+        dest: "{{ copy_path }}/overcloud_files/"
+       loop: "{{ files_to_copy.results }}"
+
